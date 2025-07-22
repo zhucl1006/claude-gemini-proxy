@@ -1,3 +1,6 @@
 
 # YoYo AI version control directory
 .yoyo/
+
+# 忽略.env文件
+.env
