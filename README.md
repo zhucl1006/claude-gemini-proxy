@@ -392,13 +392,15 @@ tail -f logs/proxy.log
 
 ### 智能模型选择
 
-```python
-# 根据任务类型自动选择模型
-TASK_MODEL_MAPPING = {
-    "code": "gpt-4",           # 代码任务使用GPT-4
-    "chat": "gemini-1.5-pro",  # 对话使用Gemini
-    "quick": "gemini-1.5-flash" # 快速任务使用Flash
-}
+```bash
+# 实际的模型别名映射（在代码中实现）
+# Claude模型别名会自动映射到对应的Gemini模型：
+# - haiku → SMALL_MODEL 配置的模型
+# - sonnet → BIG_MODEL 配置的模型
+# - opus → BIG_MODEL 配置的模型
+
+export BIG_MODEL="gemini-2.5-pro"
+export SMALL_MODEL="gemini-2.5-flash"
 ```
 
 ### 负载均衡
