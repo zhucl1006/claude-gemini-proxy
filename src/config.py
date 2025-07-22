@@ -12,14 +12,13 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    """增强版应用配置类，基于server.py实现"""
     
     # ===== API配置 =====
     GEMINI_API_KEY: str = Field(..., description="Google Gemini API密钥")
     
     # 模型配置
     BIG_MODEL: str = Field(default="gemini-2.5-pro", description="大型模型")
-    SMALL_MODEL: str = Field(default="gemini-2.5-pro", description="小型模型")
+    SMALL_MODEL: str = Field(default="gemini-2.5-flash", description="小型模型")
     
     # ===== 服务器配置 =====
     HOST: str = Field(default="0.0.0.0", description="服务器监听地址")
@@ -32,8 +31,8 @@ class Settings(BaseSettings):
     
     # ===== 流式配置 =====
     MAX_STREAMING_RETRIES: int = Field(default=12, description="流式重试次数")
-    FORCE_DISABLE_STREAMING: bool = Field(default=False, description="强制禁用流式")
-    EMERGENCY_DISABLE_STREAMING: bool = Field(default=False, description="紧急禁用流式")
+    FORCE_DISABLE_STREAMING: bool = Field(default=True, description="强制禁用流式")
+    EMERGENCY_DISABLE_STREAMING: bool = Field(default=True, description="紧急禁用流式")
     
     # ===== 代理配置 =====
     HTTPS_PROXY: Optional[str] = Field(default=None, description="HTTPS代理地址")

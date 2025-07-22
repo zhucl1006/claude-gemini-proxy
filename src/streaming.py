@@ -20,8 +20,6 @@ logger = logging.getLogger(__name__)
 
 
 class StreamingHandler:
-    """增强版流式响应处理器，基于server.py实现"""
-    
     def __init__(self):
         """初始化流式处理器"""
         self.converter = ClaudeToGeminiConverter()

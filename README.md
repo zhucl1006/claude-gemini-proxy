@@ -1,5 +1,7 @@
 # Claude Gemini Proxy
 
+本代码用于个人代理使用， 目前主要用于和gemini整合使用claude code. 
+
 🚀 **让Claude Code支持任意AI模型的通用代理服务**
 
 一个基于Python + FastAPI + LiteLLM的高性能代理服务，让Claude Code能够无缝使用Gemini、GPT-4、Claude等50+种AI模型。
@@ -12,7 +14,7 @@
 ## ✨ 核心特性
 
 - 🎯 **完全兼容Claude Code** - 无需修改任何客户端代码
-- 🌐 **支持50+AI模型** - Gemini、GPT-4、Claude、本地模型等
+- 🌐 **支持50+AI模型** - Gemini、GPT-4、Claude、本地模型等 （未完成）
 - ⚡ **高性能异步处理** - 支持流式响应和并发请求
 - 🛠️ **智能错误恢复** - 自动重试和错误处理机制
 - 🔧 **简单配置** - 一个环境变量即可开始使用
@@ -65,24 +67,22 @@ export OPENAI_API_KEY="your-openai-api-key"
 ### 3. 启动服务
 
 ```bash
-# 使用uv启动（推荐）
-uv run python src/main.py
-
-# 或使用传统方式
-python src/main.py
+# 使用启动脚本（推荐）
+chmod +x start.sh
+./start.sh
 ```
 
-服务将在 `http://localhost:8080` 启动
+服务将在 `http://localhost:3456` 启动（如果端口被占用会自动使用3457）
 
 ### 4. 配置Claude Code
 
 ```bash
 # 方式1: 环境变量（推荐）
-export ANTHROPIC_BASE_URL=http://localhost:8080
+export ANTHROPIC_BASE_URL=http://localhost:3456
 export ANTHROPIC_API_KEY=dummy-key
 
 # 方式2: Claude配置文件
-claude config set api_url http://localhost:8080
+claude config set api_url http://localhost:3456
 claude config set api_key dummy-key
 ```
 
@@ -144,14 +144,18 @@ curl http://localhost:8080/test-connection
 ```bash
 # === AI服务配置 ===
 GEMINI_API_KEY=""           # Google Gemini API密钥
-OPENAI_API_KEY=""           # OpenAI API密钥
-ANTHROPIC_API_KEY=""        # Anthropic API密钥
-AZURE_API_KEY=""            # Azure OpenAI API密钥
+OPENAI_API_KEY=""           # OpenAI API密钥（未完全实现）
+ANTHROPIC_API_KEY=""        # Anthropic API密钥（未完全实现）
+AZURE_API_KEY=""            # Azure OpenAI API密钥（未完全实现）
 
 # === 服务配置 ===
 PROXY_HOST="0.0.0.0"        # 服务器地址
-PROXY_PORT="8080"           # 服务器端口
-DEFAULT_MODEL="gemini-1.5-pro"  # 默认AI模型
+PROXY_PORT="3456"           # 服务器端口
+DEFAULT_MODEL="gemini-2.5-pro"  # 默认AI模型
+
+# === 模型映射配置 ===
+BIG_MODEL="gemini-2.5-pro"     # 大型模型（用于sonnet、opus等）
+SMALL_MODEL="gemini-2.5-flash" # 小型模型（用于haiku等）
 
 # === 代理配置 ===
 PROXY_ENABLED="false"       # 是否启用代理
@@ -166,25 +170,27 @@ TIMEOUT_SECONDS="120"      # 请求超时时间
 LOG_LEVEL="INFO"           # 日志级别
 
 # === 高级配置 ===
-ENABLE_MULTI_MODEL="false" # 启用多模型支持
-LOAD_BALANCING="false"     # 启用负载均衡
-COST_OPTIMIZATION="false"  # 启用成本优化
+ENABLE_MULTI_MODEL="false" # 启用多模型支持（未完全实现）
+LOAD_BALANCING="false"     # 启用负载均衡（未完全实现）
+COST_OPTIMIZATION="false"  # 启用成本优化（未完全实现）
 ```
 
-### 多模型配置
+### 模型别名配置
+
+项目支持Claude模型别名自动映射到Gemini模型：
 
 ```bash
-# 启用多模型支持
-export ENABLE_MULTI_MODEL="true"
+# 配置大小模型映射
+export BIG_MODEL="gemini-2.5-pro"      # 用于sonnet、opus等大模型
+export SMALL_MODEL="gemini-2.5-flash"  # 用于haiku等小模型
 
-# 配置模型映射
-export MODEL_MAPPING='{
-  "haiku": "gemini-1.5-flash",
-  "sonnet": "gemini-1.5-pro", 
-  "opus": "gpt-4",
-  "coding": "ollama/codellama"
-}'
+# 当Claude Code发送以下请求时会自动映射：
+# - claude-3-haiku → BIG_MODEL 设置的模型
+# - claude-3-sonnet → BIG_MODEL 设置的模型
+# - claude-3-opus → BIG_MODEL 设置的模型
 ```
+
+**注意**：环境变量 `MODEL_MAPPING` 目前未实现，模型映射通过 `BIG_MODEL` 和 `SMALL_MODEL` 配置。
 
 ## 🔗 Claude Code集成详解
 
@@ -192,14 +198,14 @@ export MODEL_MAPPING='{
 
 ```bash
 # 1. 启动代理服务
-uv run python src/main.py  # 或 python src/main.py
+./start.sh
 
 # 2. 设置环境变量
-export ANTHROPIC_BASE_URL=http://localhost:8080
+export ANTHROPIC_BASE_URL=http://localhost:3456
 export ANTHROPIC_API_KEY=dummy-key
 
 # 3. 验证连接
-curl http://localhost:8080/health
+curl http://localhost:3456/health
 
 # 4. 使用Claude Code
 claude "Hello, world!"
@@ -209,7 +215,7 @@ claude "Hello, world!"
 
 ```bash
 # 1. 修改Claude配置
-claude config set api_url http://localhost:8080
+claude config set api_url http://localhost:3456
 claude config set api_key dummy-key
 
 # 2. 验证配置
@@ -223,36 +229,26 @@ claude "测试连接"
 
 ```bash
 # 临时设置（仅当前会话有效）
-ANTHROPIC_BASE_URL=http://localhost:8080 ANTHROPIC_API_KEY=dummy claude "临时测试"
+ANTHROPIC_BASE_URL=http://localhost:3456 ANTHROPIC_API_KEY=dummy claude "临时测试"
 ```
 
 ### 一键启动脚本
 
+项目已包含启动脚本 `start.sh`，可以直接使用：
+
 ```bash
-# 创建启动脚本
-cat > start.sh << 'EOF'
-#!/bin/bash
-export GEMINI_API_KEY="your-api-key-here"
-export ANTHROPIC_BASE_URL=http://localhost:8080
-export ANTHROPIC_API_KEY=dummy-key
-
-echo "启动Claude Gemini Proxy..."
-uv run python src/main.py &
-PROXY_PID=$!
-
-echo "等待服务启动..."
-sleep 3
-
-echo "测试连接..."
-curl -s http://localhost:8080/health
-
-echo "代理服务已启动，PID: $PROXY_PID"
-echo "现在可以使用Claude Code了！"
-EOF
-
+# 确保脚本有执行权限
 chmod +x start.sh
+
+# 启动服务
 ./start.sh
 ```
+
+启动脚本会自动：
+- 检查环境变量配置
+- 检测端口占用情况
+- 启动代理服务
+- 显示服务信息和访问地址
 
 ## 🐳 部署方式
 
@@ -264,7 +260,7 @@ docker build -t claude-gemini-proxy .
 
 # 运行容器
 docker run -d \
-  -p 8080:8080 \
+  -p 3456:3456 \
   -e GEMINI_API_KEY="your-api-key" \
   --name claude-gemini-proxy \
   claude-gemini-proxy
@@ -278,10 +274,10 @@ services:
   claude-gemini-proxy:
     build: .
     ports:
-      - "8080:8080"
+      - "3456:3456"
     environment:
       - GEMINI_API_KEY=your-api-key
-      - DEFAULT_MODEL=gemini-1.5-pro
+      - DEFAULT_MODEL=gemini-2.5-pro
     restart: unless-stopped
 ```
 
@@ -294,10 +290,10 @@ services:
   claude-gemini-proxy:
     build: .
     ports:
-      - "8080:8080"
+      - "3456:3456"
     environment:
       - GEMINI_API_KEY=your-api-key
-      - DEFAULT_MODEL=gemini-1.5-pro
+      - DEFAULT_MODEL=gemini-2.5-pro
       - PROXY_ENABLED=true
       - PROXY_URL=http://127.0.0.1:7890
     restart: unless-stopped
@@ -331,10 +327,10 @@ git push heroku main
 
 ```bash
 # 发送消息
-curl -X POST http://localhost:8080/v1/messages \
+curl -X POST http://localhost:3456/v1/messages \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "gemini-1.5-pro",
+    "model": "gemini-2.5-pro",
     "max_tokens": 1024,
     "messages": [
       {"role": "user", "content": "Hello!"}
@@ -342,7 +338,7 @@ curl -X POST http://localhost:8080/v1/messages \
   }'
 
 # 健康检查
-curl http://localhost:8080/health
+curl http://localhost:3456/health
 ```
 
 ## 🛠️ 故障排除
@@ -352,7 +348,7 @@ curl http://localhost:8080/health
 **Q: Claude Code连接失败**
 ```bash
 # 检查服务状态
-curl http://localhost:8080/health
+curl http://localhost:3456/health
 
 # 检查环境变量
 echo $ANTHROPIC_BASE_URL
@@ -362,7 +358,7 @@ echo $ANTHROPIC_API_KEY
 **Q: API密钥错误**
 ```bash
 # 测试API连接
-curl http://localhost:8080/test-connection
+curl http://localhost:3456/test-connection
 ```
 
 **Q: 代理连接问题**
@@ -372,7 +368,7 @@ echo $PROXY_ENABLED
 echo $PROXY_URL
 
 # 测试代理连接
-curl http://localhost:8080/test-connection
+curl http://localhost:3456/test-connection
 ```
 
 **Q: 流式响应中断**
@@ -528,11 +524,14 @@ NEW_AI_SERVICES = {
 ### 本地开发
 
 ```bash
-# 使用uv开发模式（推荐）
-uv run uvicorn src.main:app --reload --host 0.0.0.0 --port 8080
+# 使用启动脚本（推荐）
+./start.sh
+
+# 或使用uv开发模式
+uv run uvicorn src.main:app --reload --host 0.0.0.0 --port 3456
 
 # 或传统方式
-uvicorn src.main:app --reload --host 0.0.0.0 --port 8080
+uvicorn src.main:app --reload --host 0.0.0.0 --port 3456
 
 # 运行测试
 uv run pytest tests/  # 或 pytest tests/
