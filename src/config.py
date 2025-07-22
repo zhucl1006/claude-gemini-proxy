@@ -18,8 +18,8 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str = Field(..., description="Google Gemini API密钥")
     
     # 模型配置
-    BIG_MODEL: str = Field(default="gemini-1.5-pro-latest", description="大型模型")
-    SMALL_MODEL: str = Field(default="gemini-1.5-flash-latest", description="小型模型")
+    BIG_MODEL: str = Field(default="gemini-2.5-pro", description="大型模型")
+    SMALL_MODEL: str = Field(default="gemini-2.5-pro", description="小型模型")
     
     # ===== 服务器配置 =====
     HOST: str = Field(default="0.0.0.0", description="服务器监听地址")
